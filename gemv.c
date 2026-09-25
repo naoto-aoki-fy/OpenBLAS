@@ -32,7 +32,7 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #ifndef COMPLEX
 
-#ifdef DOUBLE
+#ifdef BENCH_DOUBLE
 #define GEMV   BLASFUNC(dgemv)
 #elif defined(BFLOAT16) && defined(BGEMM)
 #define GEMV   BLASFUNC(bgemv)
@@ -46,7 +46,7 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #else
 
-#ifdef DOUBLE
+#ifdef BENCH_DOUBLE
 #define GEMV   BLASFUNC(zgemv)
 #else
 #define GEMV   BLASFUNC(cgemv)

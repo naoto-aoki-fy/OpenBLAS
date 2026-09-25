@@ -46,7 +46,7 @@ double fabs(double);
 #ifndef COMPLEX
 #ifdef XDOUBLE
 #define GESV   BLASFUNC(qgesv)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GESV   BLASFUNC(dgesv)
 #else
 #define GESV   BLASFUNC(sgesv)
@@ -54,7 +54,7 @@ double fabs(double);
 #else
 #ifdef XDOUBLE
 #define GESV   BLASFUNC(xgesv)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GESV   BLASFUNC(zgesv)
 #else
 #define GESV   BLASFUNC(cgesv)

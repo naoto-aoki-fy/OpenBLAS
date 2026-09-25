@@ -50,6 +50,10 @@ short, for example:
 
 Run `make clean` to remove every generated executable.
 
+Run `make check` to exercise the precision-selection regression test. The test
+uses mock installed headers that undefine `DOUBLE` and verifies all four GEMM
+precision variants without requiring an OpenBLAS installation.
+
 ## MSYS2 UCRT64
 
 From an MSYS2 UCRT64 shell:

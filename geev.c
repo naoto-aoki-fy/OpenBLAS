@@ -43,7 +43,7 @@
 #ifndef COMPLEX
 #ifdef XDOUBLE
 #define GEEV   BLASFUNC(qgeev)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GEEV   BLASFUNC(dgeev)
 #else
 #define GEEV   BLASFUNC(sgeev)
@@ -51,7 +51,7 @@
 #else
 #ifdef XDOUBLE
 #define GEEV   BLASFUNC(xgeev)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GEEV   BLASFUNC(zgeev)
 #else
 #define GEEV   BLASFUNC(cgeev)

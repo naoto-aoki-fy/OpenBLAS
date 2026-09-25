@@ -30,13 +30,13 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #undef AXPY
 
 #ifdef COMPLEX
-#ifdef DOUBLE
+#ifdef BENCH_DOUBLE
 #define AXPY   BLASFUNC(zaxpy)
 #else
 #define AXPY   BLASFUNC(caxpy)
 #endif
 #else
-#ifdef DOUBLE
+#ifdef BENCH_DOUBLE
 #define AXPY   BLASFUNC(daxpy)
 #else
 #define AXPY   BLASFUNC(saxpy)

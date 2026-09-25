@@ -1,18 +1,26 @@
 #ifndef OPENBLAS_BENCH_COMPAT_H
 #define OPENBLAS_BENCH_COMPAT_H
 
-/* Select the scalar representation before f77blas.h, whose declarations use
-   OpenBLAS's FLOATRET compatibility macro. */
+/* Preserve the benchmark's command-line precision selector.  Some installed
+   openblas_config.h variants undefine DOUBLE as part of exposing the library
+   configuration, but that must not change which benchmark was requested. */
 #ifdef DOUBLE
-#define FLOAT double
-#else
-#define FLOAT float
+#define BENCH_DOUBLE 1
 #endif
+
 /* The installed configuration header supplies blasint and BLASFUNC, so the
    benchmark follows the LP64 or ILP64 ABI selected by the OpenBLAS package.
    OpenBLAS's public f77blas.h declares both BLAS and LAPACK entry points. */
 #include <openblas_config.h>
 #include <f77blas.h>
+
+/* FLOAT and all routine selection are derived from the saved selector rather
+   than from macros the installed headers may define or undefine. */
+#ifdef BENCH_DOUBLE
+#define FLOAT double
+#else
+#define FLOAT float
+#endif
 
 #ifndef OPENBLAS_L1_DATA_LINESIZE
 #define OPENBLAS_L1_DATA_LINESIZE 64

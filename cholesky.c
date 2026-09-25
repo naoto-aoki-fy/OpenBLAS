@@ -46,7 +46,7 @@ double fabs(double);
 #ifdef XDOUBLE
 #define POTRF   BLASFUNC(qpotrf)
 #define SYRK    BLASFUNC(qsyrk)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define POTRF   BLASFUNC(dpotrf)
 #define SYRK    BLASFUNC(dsyrk)
 #else
@@ -57,7 +57,7 @@ double fabs(double);
 #ifdef XDOUBLE
 #define POTRF   BLASFUNC(xpotrf)
 #define SYRK    BLASFUNC(xherk)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define POTRF   BLASFUNC(zpotrf)
 #define SYRK    BLASFUNC(zherk)
 #else

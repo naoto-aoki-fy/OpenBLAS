@@ -47,7 +47,7 @@ double fabs(double);
 #ifdef XDOUBLE
 #define GETRF   BLASFUNC(qgetrf)
 #define GETRS   BLASFUNC(qgetrs)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GETRF   BLASFUNC(dgetrf)
 #define GETRS   BLASFUNC(dgetrs)
 #else
@@ -58,7 +58,7 @@ double fabs(double);
 #ifdef XDOUBLE
 #define GETRF   BLASFUNC(xgetrf)
 #define GETRS   BLASFUNC(xgetrs)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GETRF   BLASFUNC(zgetrf)
 #define GETRS   BLASFUNC(zgetrs)
 #else
@@ -187,7 +187,7 @@ int main(int argc, char *argv[]){
 
 #if 0
     if (
-#ifdef DOUBLE
+#ifdef BENCH_DOUBLE
 	maxerr > 1.e-8
 #else
 	maxerr > 1.e-1

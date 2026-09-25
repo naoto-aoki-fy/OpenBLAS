@@ -15,7 +15,7 @@ BLAS_BENCHMARKS := $(foreach op,$(BLAS_SOURCES),s$(op) d$(op) c$(op) z$(op))
 LAPACK_BENCHMARKS := linpack cholesky gesv geev getri potrf
 BENCHMARKS := $(BLAS_BENCHMARKS) $(LAPACK_BENCHMARKS)
 
-.PHONY: all clean check-openblas
+.PHONY: all clean check check-openblas
 all: check-openblas $(BENCHMARKS)
 
 check-openblas:
@@ -23,6 +23,9 @@ check-openblas:
 		echo 'OpenBLAS was not found. Install its development package or set OPENBLAS_CFLAGS and OPENBLAS_LIBS.' >&2; \
 		exit 1; \
 	}
+
+check:
+	CC="$(CC)" ./tests/check-precision.sh
 
 define real_single_template
 s$(1): $(1).c bench.h bench_compat.h

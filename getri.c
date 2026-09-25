@@ -45,7 +45,7 @@
 #ifdef XDOUBLE
 #define GETRF   BLASFUNC(qgetrf)
 #define GETRI   BLASFUNC(qgetri)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GETRF   BLASFUNC(dgetrf)
 #define GETRI   BLASFUNC(dgetri)
 #else
@@ -56,7 +56,7 @@
 #ifdef XDOUBLE
 #define GETRF   BLASFUNC(xgetrf)
 #define GETRI   BLASFUNC(xgetri)
-#elif defined(DOUBLE)
+#elif defined(BENCH_DOUBLE)
 #define GETRF   BLASFUNC(zgetrf)
 #define GETRI   BLASFUNC(zgetri)
 #else
