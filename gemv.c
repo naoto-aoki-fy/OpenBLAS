@@ -53,6 +53,10 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #endif
+#ifndef IFLOAT
+#define IFLOAT FLOAT
+#endif
+
 int main(int argc, char *argv[]){
 
   IFLOAT *a, *x;
@@ -126,9 +130,7 @@ int main(int argc, char *argv[]){
     fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
-#ifdef __linux
-  srandom(getpid());
-#endif
+  srand((unsigned int)time(NULL));
 
   fprintf(stderr, "   SIZE       Flops\n");
 

@@ -27,43 +27,51 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "bench.h"
 
-#undef ROT
+
+#undef TRMM
 
 #ifndef COMPLEX
 
 #ifdef DOUBLE
-#define ROT   BLASFUNC(drot)
+#define TRMM   BLASFUNC(dtrmm)
 #else
-#define ROT   BLASFUNC(srot)
+#define TRMM   BLASFUNC(strmm)
 #endif
 
 #else
 
 #ifdef DOUBLE
-#define ROT   BLASFUNC(zdrot)
+#define TRMM   BLASFUNC(ztrmm)
 #else
-#define ROT   BLASFUNC(csrot)
+#define TRMM   BLASFUNC(ctrmm)
 #endif
 
 #endif
 
 int main(int argc, char *argv[]){
 
-  FLOAT *x, *y;
-  // FLOAT result;
-  blasint m, i;
-  blasint inc_x=1,inc_y=1;
-  FLOAT c[1] = { 2.0 };
-  FLOAT s[1] = { 2.0 };
-  int loops = 1;
-  int l;
+  FLOAT *a, *b;
+  FLOAT alpha[] = {1.0, 1.0};
+  FLOAT beta [] = {1.0, 1.0};
   char *p;
+
+  char side ='L';
+  char uplo ='U';
+  char trans='N';
+  char diag ='U';
+
+  if ((p = getenv("OPENBLAS_SIDE"))) side=*p; 
+  if ((p = getenv("OPENBLAS_UPLO"))) uplo=*p;
+  if ((p = getenv("OPENBLAS_TRANS"))) trans=*p;
+  if ((p = getenv("OPENBLAS_DIAG"))) diag=*p;
+
+  blasint m, i, j;
 
   int from =   1;
   int to   = 200;
   int step =   1;
 
-  double time1,timeg;
+  double time1;
 
   argc--;argv++;
 
@@ -71,60 +79,45 @@ int main(int argc, char *argv[]){
   if (argc > 0) { to       = MAX(atol(*argv), from);	argc--; argv++;}
   if (argc > 0) { step     = atol(*argv);		argc--; argv++;}
 
-  if ((p = getenv("OPENBLAS_LOOPS")))  loops = atoi(p);
-  if ((p = getenv("OPENBLAS_INCX")))   inc_x = atoi(p);
-  if ((p = getenv("OPENBLAS_INCY")))   inc_y = atoi(p);
+  fprintf(stderr, "From : %3d  To : %3d Step = %3d Side = %c Uplo = %c Trans = %c Diag = %c\n", from, to, step,side,uplo,trans,diag);
 
-  fprintf(stderr, "From : %3d  To : %3d Step = %3d Inc_x = %d Inc_y = %d Loops = %d\n", from, to, step,inc_x,inc_y,loops);
-
-  if (( x = (FLOAT *)malloc(sizeof(FLOAT) * to * abs(inc_x) * COMPSIZE)) == NULL){
+  if (( a = (FLOAT *)malloc(sizeof(FLOAT) * to * to * COMPSIZE)) == NULL){
     fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
-  if (( y = (FLOAT *)malloc(sizeof(FLOAT) * to * abs(inc_y) * COMPSIZE)) == NULL){
+  if (( b = (FLOAT *)malloc(sizeof(FLOAT) * to * to * COMPSIZE)) == NULL){
     fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
-#ifdef __linux
-  srandom(getpid());
-#endif
+
+
+  srand((unsigned int)time(NULL));
 
   fprintf(stderr, "   SIZE       Flops\n");
 
   for(m = from; m <= to; m += step)
   {
 
-   timeg=0;
+    fprintf(stderr, " %6d : ", (int)m);
 
-   fprintf(stderr, " %6d : ", (int)m);
+    for(j = 0; j < m; j++){
+      for(i = 0; i < m * COMPSIZE; i++){
+	a[(long)i + (long)j * (long)m * COMPSIZE] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
+	b[(long)i + (long)j * (long)m * COMPSIZE] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
+      }
+    }
 
-   for(i = 0; i < m * COMPSIZE * abs(inc_x); i++){
-		x[i] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
-   }
+    begin();
 
-   for(i = 0; i < m * COMPSIZE * abs(inc_y); i++){
-		y[i] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
-   }
+    TRMM (&side, &uplo, &trans, &diag, &m, &m, alpha, a, &m, b, &m);
 
-   for (l=0; l<loops; l++)
-   {
-    	begin();
+    end();
 
-    	ROT (&m, x, &inc_x, y, &inc_y, c, s);
+    time1 = getsec();
 
-    	end();
-
-    	time1 = getsec();
-
-	    timeg += time1;
-
-   }
-
-   timeg /= loops;
-
-   fprintf(stderr,
-	    " %10.2f MFlops %10.6f sec\n",
-	    COMPSIZE * COMPSIZE * 6. * (double)m / timeg * 1.e-6, timeg);
+    fprintf(stderr,
+	    " %10.2f MFlops  %10.6f sec\n",
+	    COMPSIZE * COMPSIZE * 1. * (double)m * (double)m * (double)m / time1 * 1.e-6, time1);
 
   }
 

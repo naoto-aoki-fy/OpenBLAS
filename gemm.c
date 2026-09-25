@@ -58,6 +58,10 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endif
 
+#ifndef IFLOAT
+#define IFLOAT FLOAT
+#endif
+
 int main(int argc, char *argv[]){
 
   IFLOAT *a, *b;
@@ -144,9 +148,7 @@ int main(int argc, char *argv[]){
     fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
-#ifdef __linux
-  srandom(getpid());
-#endif
+  srand((unsigned int)time(NULL));
 
   for (i = 0; i < m * k * COMPSIZE; i++) {
     a[i] = ((IFLOAT) rand() / (IFLOAT) RAND_MAX) - 0.5;

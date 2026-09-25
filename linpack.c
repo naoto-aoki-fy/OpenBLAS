@@ -38,61 +38,60 @@
 
 #include "bench.h"
 
+double fabs(double);
+
 #undef GETRF
-#undef GETRI
+#undef GETRS
 
 #ifndef COMPLEX
 #ifdef XDOUBLE
 #define GETRF   BLASFUNC(qgetrf)
-#define GETRI   BLASFUNC(qgetri)
+#define GETRS   BLASFUNC(qgetrs)
 #elif defined(DOUBLE)
 #define GETRF   BLASFUNC(dgetrf)
-#define GETRI   BLASFUNC(dgetri)
+#define GETRS   BLASFUNC(dgetrs)
 #else
 #define GETRF   BLASFUNC(sgetrf)
-#define GETRI   BLASFUNC(sgetri)
+#define GETRS   BLASFUNC(sgetrs)
 #endif
 #else
 #ifdef XDOUBLE
 #define GETRF   BLASFUNC(xgetrf)
-#define GETRI   BLASFUNC(xgetri)
+#define GETRS   BLASFUNC(xgetrs)
 #elif defined(DOUBLE)
 #define GETRF   BLASFUNC(zgetrf)
-#define GETRI   BLASFUNC(zgetri)
+#define GETRS   BLASFUNC(zgetrs)
 #else
 #define GETRF   BLASFUNC(cgetrf)
-#define GETRI   BLASFUNC(cgetri)
+#define GETRS   BLASFUNC(cgetrs)
 #endif
 #endif
-
-extern void GETRI(blasint *m, FLOAT *a, blasint *lda, blasint *ipiv, FLOAT *work, blasint *lwork, blasint *info);
 
 int main(int argc, char *argv[]){
 
-  FLOAT *a,*work;
-  FLOAT wkopt[4];
+  FLOAT *a, *b;
   blasint *ipiv;
-  blasint m, i, j, l, info,lwork;
+
+  blasint m, i, j, l, info;
+  blasint unit =   1;
 
   int from =   1;
   int to   = 200;
   int step =   1;
   int loops =  1;
 
-  double time1,timeg;
-  
-  char *p;
-  char btest = 'I';
+  FLOAT maxerr;
 
+  double time1, time2, timeg1,timeg2;
+
+  char *p;
+  if ((p = getenv("OPENBLAS_LOOPS"))) loops=atoi(p);
+  
   argc--;argv++;
 
   if (argc > 0) { from     = atol(*argv);		argc--; argv++;}
   if (argc > 0) { to       = MAX(atol(*argv), from);	argc--; argv++;}
   if (argc > 0) { step     = atol(*argv);		argc--; argv++;}
-
-  if ((p = getenv("OPENBLAS_TEST"))) btest=*p;
-  
-  if ((p = getenv("OPENBLAS_LOOPS"))) loops=atoi(p);
 
   fprintf(stderr, "From : %3d  To : %3d Step = %3d\n", from, to, step);
 
@@ -100,76 +99,104 @@ int main(int argc, char *argv[]){
     fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
+  if (( b = (FLOAT *)malloc(sizeof(FLOAT) * to * COMPSIZE)) == NULL){
+    fprintf(stderr,"Out of Memory!!\n");exit(1);
+  }
+
   if (( ipiv = (blasint *)malloc(sizeof(blasint) * to * COMPSIZE)) == NULL){
     fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
+  srand((unsigned int)time(NULL));
 
+  fprintf(stderr, "   SIZE       Residual     Decompose            Solve           Total\n");
 
-    for(j = 0; j < to; j++){
-      for(i = 0; i < to * COMPSIZE; i++){
-	a[(long)i + (long)j * (long)to * COMPSIZE] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
+  for(m = from; m <= to; m += step){
+    timeg1 = timeg2 = 0.;
+    fprintf(stderr, " %6d : ", (int)m);
+    for (l = 0; l < loops; l++) {
+    for(j = 0; j < m; j++){
+      for(i = 0; i < m * COMPSIZE; i++){
+	a[(long)i + (long)j * (long)m * COMPSIZE] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
       }
     }
 
+    for (i = 0; i < m * COMPSIZE; ++i) b[i] = 0.;
 
-    lwork = -1;
-    m=to;
-
-  GETRI(&m, a, &m, ipiv, wkopt, &lwork, &info);
-
-  lwork = (blasint)wkopt[0];
-  if (( work = (FLOAT *)malloc(sizeof(FLOAT) * lwork * COMPSIZE)) == NULL){
-    fprintf(stderr,"Out of Memory!!\n");exit(1);
-  }
-
-
-#ifdef __linux
-  srandom(getpid());
-#endif
-
-  fprintf(stderr, "   SIZE           FLops           Time          Lwork\n");
-
-  for(m = from; m <= to; m += step){
-    timeg = 0.;
-    fprintf(stderr, " %6d : ", (int)m);
-
-    for (l = 0; l < loops; l++) {
-
-    if (btest == 'F') begin();
-    GETRF (&m, &m, a, &m, ipiv, &info);
-    if (btest == 'F') {
-      end();
-      timeg += getsec();
+    for (j = 0; j < m; ++j) {
+      for (i = 0; i < m * COMPSIZE; ++i) {
+	b[i] += a[(long)i + (long)j * (long)m * COMPSIZE];
+      }
     }
+
+    begin();
+
+    GETRF (&m, &m, a, &m, ipiv, &info);
+
+    end();
+
     if (info) {
       fprintf(stderr, "Matrix is not singular .. %d\n", info);
       exit(1);
     }
 
-    if (btest == 'I') begin();
+    timeg1 += getsec();
 
-    lwork = -1;
-    GETRI(&m, a, &m, ipiv, wkopt, &lwork, &info);
+    begin();
 
-    lwork = (blasint)wkopt[0];
-    GETRI(&m, a, &m, ipiv, work, &lwork, &info);
-    if (btest == 'I') end();
+    GETRS("N", &m, &unit, a, &m, ipiv, b, &m, &info);
+
+    end();
 
     if (info) {
-      fprintf(stderr, "failed compute inverse matrix .. %d\n", info);
+      fprintf(stderr, "Matrix is not singular .. %d\n", info);
       exit(1);
     }
 
-    if (btest == 'I') 
-      timeg += getsec();
-    
-    } // loops
-    time1 = timeg/(double)loops;
-    fprintf(stderr,
-	    " %10.2f MFlops : %10.2f Sec : %d\n",
-	    COMPSIZE * COMPSIZE * (4.0/3.0 * (double)m * (double)m *(double)m - (double)m *(double)m + 5.0/3.0* (double)m) / time1 * 1.e-6,time1,lwork);
+    timeg2 += getsec();
+    } //loops
+    time1=timeg1/(double)loops;
+    time2=timeg2/(double)loops;
+    maxerr = 0.;
 
+    for(i = 0; i < m; i++){
+#ifndef XDOUBLE
+      if (maxerr < fabs(b[i * COMPSIZE] - 1.0)) maxerr = fabs(b[i * COMPSIZE] - 1.0);
+#ifdef COMPLEX
+      if (maxerr < fabs(b[i * COMPSIZE] + 1)) maxerr = fabs(b[i * COMPSIZE + 1]);
+#endif
+#else
+      if (maxerr < fabsl(b[i * COMPSIZE] - 1.0L)) maxerr = fabsl(b[i * COMPSIZE] - 1.0L);
+#ifdef COMPLEX
+      if (maxerr < fabsl(b[i * COMPSIZE] + 1)) maxerr = fabsl(b[i * COMPSIZE + 1]);
+#endif
+#endif
+    }
+
+#ifdef XDOUBLE
+    fprintf(stderr,"  %Le ", maxerr);
+#else
+    fprintf(stderr,"  %e ", maxerr);
+#endif
+
+    fprintf(stderr,
+	    " %10.2f MFlops %10.2f MFlops %10.2f MFlops\n",
+	    COMPSIZE * COMPSIZE * 2. / 3. * (double)m * (double)m * (double)m / time1 * 1.e-6,
+	    COMPSIZE * COMPSIZE * 2.      * (double)m * (double)m             / time2 * 1.e-6,
+	    COMPSIZE * COMPSIZE * (2. / 3. * (double)m * (double)m * (double)m + 2. * (double)m * (double)m) / (time1 + time2) * 1.e-6);
+
+#if 0
+    if (
+#ifdef DOUBLE
+	maxerr > 1.e-8
+#else
+	maxerr > 1.e-1
+#endif
+	) {
+      fprintf(stderr, "Error is too large.\n");
+      exit(1);
+    }
+#endif
 
   }
 

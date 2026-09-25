@@ -142,9 +142,7 @@ int main(int argc, char *argv[]){
   }
 
 
-#ifdef __linux
-  srandom(getpid());
-#endif
+  srand((unsigned int)time(NULL));
 
   fprintf(stderr, "   SIZE           FLops           Time          Lwork\n");
 

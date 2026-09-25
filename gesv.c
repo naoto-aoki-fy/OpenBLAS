@@ -94,9 +94,7 @@ int main(int argc, char *argv[]){
     fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
-#ifdef __linux
-  srandom(getpid());
-#endif
+  srand((unsigned int)time(NULL));
 
   fprintf(stderr, "   SIZE       Flops              Time\n");
 

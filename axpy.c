@@ -27,106 +27,97 @@ USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "bench.h"
 
-#undef ASUM
+#undef AXPY
 
 #ifdef COMPLEX
 #ifdef DOUBLE
-#define ASUM BLASFUNC(dzasum)
+#define AXPY   BLASFUNC(zaxpy)
 #else
-#define ASUM BLASFUNC(scasum)
+#define AXPY   BLASFUNC(caxpy)
 #endif
 #else
 #ifdef DOUBLE
-#define ASUM BLASFUNC(dasum)
+#define AXPY   BLASFUNC(daxpy)
 #else
-#define ASUM BLASFUNC(sasum)
+#define AXPY   BLASFUNC(saxpy)
 #endif
 #endif
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]){
 
-  FLOAT *x;
-  FLOAT result;
+  FLOAT *x, *y;
+  FLOAT alpha[2] = { 2.0, 2.0 };
   blasint m, i;
-  blasint inc_x = 1;
+  blasint inc_x=1,inc_y=1;
   int loops = 1;
   int l;
   char *p;
 
-  int from = 1;
-  int to = 200;
-  int step = 1;
-  double time1, timeg;
+  int from =   1;
+  int to   = 200;
+  int step =   1;
+  double time1,timeg;
 
-  argc--;
-  argv++;
+  argc--;argv++;
 
-  if (argc > 0)
-  {
-    from = atol(*argv);
-    argc--;
-    argv++;
-  }
-  if (argc > 0)
-  {
-    to = MAX(atol(*argv), from);
-    argc--;
-    argv++;
-  }
-  if (argc > 0)
-  {
-    step = atol(*argv);
-    argc--;
-    argv++;
+  if (argc > 0) { from     = atol(*argv);		argc--; argv++;}
+  if (argc > 0) { to       = MAX(atol(*argv), from);	argc--; argv++;}
+  if (argc > 0) { step     = atol(*argv);		argc--; argv++;}
+
+  if ((p = getenv("OPENBLAS_LOOPS")))  loops = atoi(p);
+  if ((p = getenv("OPENBLAS_INCX")))   inc_x = atoi(p);
+  if ((p = getenv("OPENBLAS_INCY")))   inc_y = atoi(p);
+
+  fprintf(stderr, "From : %3d  To : %3d Step = %3d Inc_x = %d Inc_y = %d Loops = %d\n", from, to, step,inc_x,inc_y,loops);
+
+  if (( x = (FLOAT *)malloc(sizeof(FLOAT) * to * abs(inc_x) * COMPSIZE)) == NULL){
+    fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
-  if ((p = getenv("OPENBLAS_LOOPS")))
-    loops = atoi(p);
-  if ((p = getenv("OPENBLAS_INCX")))
-    inc_x = atoi(p);
-
-  fprintf(stderr, "From : %3d  To : %3d Step = %3d Inc_x = %d Loops = %d\n", from, to, step, inc_x, loops);
-
-  if ((x = (FLOAT *)malloc(sizeof(FLOAT) * to * abs(inc_x) * COMPSIZE)) == NULL)
-  {
-    fprintf(stderr, "Out of Memory!!\n");
-    exit(1);
+  if (( y = (FLOAT *)malloc(sizeof(FLOAT) * to * abs(inc_y) * COMPSIZE)) == NULL){
+    fprintf(stderr,"Out of Memory!!\n");exit(1);
   }
 
-#ifdef __linux
-  srandom(getpid());
-#endif
+  srand((unsigned int)time(NULL));
 
   fprintf(stderr, "   SIZE       Flops\n");
 
-  for (m = from; m <= to; m += step)
+  for(m = from; m <= to; m += step)
   {
 
-    timeg = 0;
+   timeg=0;
 
-    fprintf(stderr, " %6d : ", (int)m);
+   fprintf(stderr, " %6d : ", (int)m);
 
-    for (l = 0; l < loops; l++)
-    {
 
-      for (i = 0; i < m * COMPSIZE * abs(inc_x); i++)
-      {
-        x[i] = ((FLOAT)rand() / (FLOAT)RAND_MAX) - 0.5;
-      }
-      begin();
-      result = ASUM(&m, x, &inc_x);
-      end();
-      timeg += getsec();
+   for (l=0; l<loops; l++)
+   {
+
+   	for(i = 0; i < m * COMPSIZE * abs(inc_x); i++){
+			x[i] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
+   	}
+
+   	for(i = 0; i < m * COMPSIZE * abs(inc_y); i++){
+			y[i] = ((FLOAT) rand() / (FLOAT) RAND_MAX) - 0.5;
+   	}
+    	begin();
+
+    	AXPY (&m, alpha, x, &inc_x, y, &inc_y );
+
+    	end();
+
+    	time1 = getsec();
+
+	timeg += time1;
+
     }
-    if (loops > 1)
-      timeg /= loops;
 
-#ifdef COMPLEX
-    fprintf(stderr, " %10.2f MFlops %10.6f sec\n", 4. * (double)m / timeg * 1.e-6, timeg);
-#else
-    fprintf(stderr, " %10.2f MFlops %10.6f sec\n", 2. * (double)m / timeg * 1.e-6, timeg);
-#endif
+    timeg /= loops;
+
+    fprintf(stderr,
+	    " %10.2f MFlops %10.9f sec\n",
+	    COMPSIZE * COMPSIZE * 2. * (double)m / timeg * 1.e-6, timeg);
+
   }
 
   return 0;
